@@ -2,7 +2,7 @@ import yfinance as yf
 import requests
 import os
 
-WEBHOOK_URL = "https://discord.com/api/webhooks/1498252515525918740/n9DVZv19ChCI76ki4KJD8Gd6-lD1dQIN9WzVpBZ5T6u1x4YbS5_Rjwip4hakQKMpbhNt"
+WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 
 def get_all_tickers():
     return [str(i) for i in range(3000, 3050)]
