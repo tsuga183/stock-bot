@@ -49,7 +49,7 @@ for t in TICKERS:
         if s >= 60:
             results.append((t, s))
      except Exception as e:
-        print(f"エラー: {t} {e}")
+    raise Exception(f"エラー: {t} {e}")
 
 if results:
     msg = "【銘柄抽出】\n"
