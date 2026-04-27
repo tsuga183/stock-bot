@@ -2,18 +2,9 @@ import yfinance as yf
 import requests
 import os
 
-WEBHOOK_URL = "URL"https://discord.com/api/webhooks/1498252515525918740/n9DVZv19ChCI76ki4KJD8Gd6-lD1dQIN9WzVpBZ5T6u1x4YbS5_Rjwip4hakQKMpbhNt"
-
-LINE_TOKEN = os.environ["LINE_TOKEN"]
+WEBHOOK_URL = "https://discord.com/api/webhooks/1498252515525918740/n9DVZv19ChCI76ki4KJD8Gd6-lD1dQIN9WzVpBZ5T6u1x4YbS5_Rjwip4hakQKMpbhNt"
 
 TICKERS = ["3445", "6526", "6963"]
-
-def send_line(msg):
-    requests.post(
-        "https://notify-api.line.me/api/notify",
-        headers={"Authorization": f"Bearer {LINE_TOKEN}"},
-        data={"message": msg}
-    )
 
 def send_discord(msg):
     requests.post(WEBHOOK_URL, json={"content": msg})
