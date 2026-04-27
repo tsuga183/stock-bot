@@ -13,7 +13,10 @@ def send_discord(msg):
     requests.post(WEBHOOK_URL, json={"content": msg})
 
 def get_score(ticker):
-    df = yf.download(f"{ticker}.T", period="6mo")
+    try:
+    df = yf.download(f"{ticker}.T", period="6mo", progress=False)
+except Exception as e:
+    raise Exception(f"取得失敗: {e}")
 
     # ←ここ追加
     if df.empty or len(df) < 75:
