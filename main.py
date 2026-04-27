@@ -41,8 +41,8 @@ for t in TICKERS:
         s = get_score(t)
         if s >= 60:
             results.append((t, s))
-    except:
-        pass
+     except Exception as e:
+        print(f"エラー: {t} {e}")
 
 if results:
     msg = "【銘柄抽出】\n"
