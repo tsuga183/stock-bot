@@ -21,7 +21,7 @@ except Exception as e:
 
     # ←ここ追加
     if df.empty or len(df) < 75:
-        raise Exception("データ不足")
+        return 0
 
     df["MA25"] = df["Close"].rolling(25).mean()
     df["MA75"] = df["Close"].rolling(75).mean()
