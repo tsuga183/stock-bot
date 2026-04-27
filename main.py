@@ -47,3 +47,5 @@ if results:
         msg += f"{r[0]} スコア:{r[1]}\n"
     
     send_discord(msg)
+
+send_discord("テスト送信")
