@@ -16,7 +16,8 @@ def get_score(ticker):
     try:
     df = yf.download(f"{ticker}.T", period="6mo", progress=False)
 except Exception as e:
-    raise Exception(f"取得失敗: {e}")
+    print(f"取得失敗: {ticker} {e}")
+    return 0
 
     # ←ここ追加
     if df.empty or len(df) < 75:
