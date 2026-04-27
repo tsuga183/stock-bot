@@ -4,7 +4,10 @@ import os
 
 WEBHOOK_URL = "https://discord.com/api/webhooks/1498252515525918740/n9DVZv19ChCI76ki4KJD8Gd6-lD1dQIN9WzVpBZ5T6u1x4YbS5_Rjwip4hakQKMpbhNt"
 
-TICKERS = ["3445", "6526", "6963"]
+def get_all_tickers():
+    return [str(i) for i in range(3000, 6000)]
+
+TICKERS = get_all_tickers()
 
 def send_discord(msg):
     requests.post(WEBHOOK_URL, json={"content": msg})
