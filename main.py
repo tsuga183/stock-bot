@@ -14,13 +14,17 @@ def send_discord(msg):
 
 def get_score(ticker):
     df = yf.download(f"{ticker}.T", period="6mo")
-    
+
+    # ←ここ追加
+    if df.empty or len(df) < 75:
+        raise Exception("データ不足")
+
     df["MA25"] = df["Close"].rolling(25).mean()
     df["MA75"] = df["Close"].rolling(75).mean()
     df["Vol_avg"] = df["Volume"].rolling(25).mean()
     df["Vol_ratio"] = df["Volume"] / df["Vol_avg"]
     df["High60"] = df["High"].rolling(60).max()
-    
+
     score = 0
     
     if df["MA25"].iloc[-1] > df["MA75"].iloc[-1]:
