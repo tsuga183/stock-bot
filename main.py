@@ -6,14 +6,15 @@ import random
 
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 
-# 🔥 銘柄数制限（まずは100〜200にする）
-TICKERS = [str(i) for i in range(1300, 1500)]
+# 🔥 まずは少なめ（重要）
+TICKERS = [str(i) for i in range(1300, 1400)]  # 100銘柄
 
 def send(msg):
     try:
         requests.post(WEBHOOK_URL, json={"content": msg})
     except:
         pass
+
 
 def fetch(ticker):
     try:
@@ -48,12 +49,12 @@ for i, t in enumerate(TICKERS):
     if score >= 10:
         results.append((t, score))
 
-    # 🔥 超重要：間引き
-    time.sleep(random.uniform(1.0, 2.5))
+    # 🔥 超重要（ここが命）
+    time.sleep(random.uniform(2.0, 4.0))
 
     # 🔥 50件ごとに休憩
-    if i % 50 == 0:
-        time.sleep(5)
+    if i % 50 == 0 and i != 0:
+        time.sleep(10)
 
 
 results.sort(key=lambda x: x[1], reverse=True)
