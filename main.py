@@ -1,6 +1,7 @@
 import yfinance as yf
 import requests
 import os
+import time
 
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 
@@ -12,18 +13,29 @@ TICKERS = [
 def send(msg):
     requests.post(WEBHOOK_URL, json={"content": msg})
 
-def get_score(ticker):
-    try:
-        df = yf.download(f"{ticker}.T", period="6mo", progress=False)
-    except:
-        return None
 
-    if df is None or df.empty:
+def get_data_with_retry(ticker, retry=3):
+    for i in range(retry):
+        try:
+            df = yf.download(f"{ticker}.T", period="6mo", progress=False)
+            if df is not None and not df.empty:
+                return df
+        except:
+            pass
+
+        time.sleep(2)  # ← 超重要（待つ）
+
+    return None
+
+
+def get_score(ticker):
+    df = get_data_with_retry(ticker)
+
+    if df is None or len(df) < 75:
         return None
 
     score = 0
 
-    # 🔥 超ゆる条件（とにかく検出）
     if df["Close"].iloc[-1] > df["Close"].iloc[-5]:
         score += 10
 
@@ -46,8 +58,6 @@ for t in TICKERS:
         debug += f"{t}: NG\n"
     else:
         debug += f"{t}: {s}\n"
-
-        # 🔥 条件ほぼなし
         if s >= 10:
             results.append((t, s))
 
