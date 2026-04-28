@@ -5,16 +5,21 @@ import os
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 
 def get_all_tickers():
-    return [str(i) for i in range(3000, 3050)]
+    # 確実にデータ取れる銘柄だけ
+    return ["7203", "6758", "9984", "8306", "9432"]
 
 TICKERS = get_all_tickers()
 
 def send_discord(msg):
-    requests.post(WEBHOOK_URL, json={"content": msg})
+    if WEBHOOK_URL:
+        requests.post(WEBHOOK_URL, json={"content": msg})
+    else:
+        print("Webhook未設定")
 
 def get_score(ticker):
     try:
         df = yf.download(f"{ticker}.T", period="6mo", progress=False)
+        print(f"{ticker} empty={df.empty} len={len(df)}")  # デバッグ
     except Exception as e:
         print(f"取得失敗: {ticker} {e}")
         return 0
@@ -31,15 +36,13 @@ def get_score(ticker):
 
     score = 0
 
-    # 条件①（ゆるめ）
+    # ゆるめ条件
     if df["MA25"].iloc[-1] > df["MA75"].iloc[-1]:
         score += 20
 
-    # 条件②（ゆるめ：97% → 90%）
     if df["Close"].iloc[-1] >= df["High60"].iloc[-1] * 0.90:
         score += 20
 
-    # 条件③（ゆるめ：1.2〜2.0 → 1.0〜3.0）
     if 1.0 <= df["Vol_ratio"].iloc[-1] <= 3.0:
         score += 20
 
@@ -53,17 +56,20 @@ results = []
 for t in TICKERS:
     try:
         s = get_score(t)
-        if s >= 40:  # ← 60 → 40に緩和
+        if s >= 40:
             results.append((t, s))
     except Exception as e:
         print(f"スキップ: {t} {e}")
         continue
 
+# 結果送信
 if results:
     msg = "【銘柄抽出】\n"
     for r in results:
         msg += f"{r[0]} スコア:{r[1]}\n"
-
     send_discord(msg)
+else:
+    send_discord("銘柄なし（条件未達 or データ取得NG）")
 
+# テスト
 send_discord("テスト送信")
