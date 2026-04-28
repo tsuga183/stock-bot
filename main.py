@@ -4,8 +4,20 @@ import os
 
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 
+# 実在する銘柄に変更（超重要）
 def get_all_tickers():
-    return [str(i) for i in range(3000, 3050)]
+    return [
+        "7203",  # トヨタ
+        "6758",  # ソニー
+        "9984",  # ソフトバンク
+        "8306",  # 三菱UFJ
+        "9432",  # NTT
+        "7974",  # 任天堂
+        "6861",  # キーエンス
+        "6501",  # 日立
+        "6098",  # リクルート
+        "4063",  # 信越化学
+    ]
 
 TICKERS = get_all_tickers()
 
@@ -15,11 +27,11 @@ def send_discord(msg):
 def get_score(ticker):
     try:
         df = yf.download(f"{ticker}.T", period="6mo", progress=False)
-    except Exception as e:
-        return 0
+    except:
+        return -1  # エラー区別
 
     if df.empty or len(df) < 75:
-        return 0
+        return -1
 
     df["MA25"] = df["Close"].rolling(25).mean()
     df["MA75"] = df["Close"].rolling(75).mean()
@@ -29,15 +41,12 @@ def get_score(ticker):
 
     score = 0
 
-    # 条件① ゴールデンクロス気味
     if df["MA25"].iloc[-1] > df["MA75"].iloc[-1]:
         score += 20
 
-    # 条件② 高値付近
     if df["Close"].iloc[-1] >= df["High60"].iloc[-1] * 0.95:
         score += 20
 
-    # 条件③ 出来高増
     if df["Vol_ratio"].iloc[-1] >= 1.1:
         score += 20
 
@@ -48,22 +57,20 @@ results = []
 debug_msg = "【全銘柄スコア】\n"
 
 for t in TICKERS:
-    try:
-        s = get_score(t)
+    s = get_score(t)
+
+    if s == -1:
+        debug_msg += f"{t}: データ取得NG\n"
+    else:
         debug_msg += f"{t}: {s}\n"
 
-        if s >= 20:  # ←ゆるめ条件
+        if s >= 20:
             results.append((t, s))
 
-    except Exception:
-        debug_msg += f"{t}: エラー\n"
-
-# デバッグ送信
 send_discord(debug_msg)
 
-# 抽出結果
 if results:
-    msg = "【銘柄スコア一覧】\n"
+    msg = "【抽出銘柄】\n"
     for r in results:
         msg += f"{r[0]} スコア:{r[1]}\n"
 else:
@@ -71,5 +78,4 @@ else:
 
 send_discord(msg)
 
-# テスト確認
 send_discord("テスト送信")
