@@ -4,77 +4,63 @@ import os
 
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 
-# ✅ 実在する銘柄（まずは安定動作優先）
 TICKERS = [
-    "7203", "6758", "9984", "8306", "9432",
-    "7974", "6861", "6501", "6098", "4063"
+    "7203","6758","9984","8306","9432",
+    "7974","6861","6501","6098","4063"
 ]
 
-def send_discord(msg):
+def send(msg):
     requests.post(WEBHOOK_URL, json={"content": msg})
-
 
 def get_score(ticker):
     try:
         df = yf.download(f"{ticker}.T", period="6mo", progress=False)
-    except Exception:
-        return None  # エラー
-
-    if df is None or df.empty or len(df) < 75:
+    except:
         return None
 
-    df["MA25"] = df["Close"].rolling(25).mean()
-    df["MA75"] = df["Close"].rolling(75).mean()
-    df["Vol_avg"] = df["Volume"].rolling(25).mean()
-    df["Vol_ratio"] = df["Volume"] / df["Vol_avg"]
-    df["High60"] = df["High"].rolling(60).max()
+    if df is None or df.empty:
+        return None
 
     score = 0
 
-    # 条件①
-    if df["MA25"].iloc[-1] > df["MA75"].iloc[-1]:
-        score += 20
+    # 🔥 超ゆる条件（とにかく検出）
+    if df["Close"].iloc[-1] > df["Close"].iloc[-5]:
+        score += 10
 
-    # 条件②（少し緩め）
-    if df["Close"].iloc[-1] >= df["High60"].iloc[-1] * 0.93:
-        score += 20
+    if df["Close"].iloc[-1] > df["Close"].mean():
+        score += 10
 
-    # 条件③（少し緩め）
-    if df["Vol_ratio"].iloc[-1] >= 1.05:
-        score += 20
+    if df["Volume"].iloc[-1] > df["Volume"].mean():
+        score += 10
 
     return score
 
 
 results = []
-debug_msg = "【全銘柄スコア】\n"
+debug = "【全銘柄】\n"
 
 for t in TICKERS:
     s = get_score(t)
 
     if s is None:
-        debug_msg += f"{t}: データ取得NG\n"
+        debug += f"{t}: NG\n"
     else:
-        debug_msg += f"{t}: {s}\n"
+        debug += f"{t}: {s}\n"
 
-        if s >= 20:  # ←ここ緩め（検出しやすく）
+        # 🔥 条件ほぼなし
+        if s >= 10:
             results.append((t, s))
 
-# デバッグ表示
-send_discord(debug_msg)
+send(debug)
 
-# 抽出結果
 if results:
-    # スコア順に並べる
     results.sort(key=lambda x: x[1], reverse=True)
 
-    msg = "【抽出銘柄ランキング】\n"
+    msg = "【ヒット銘柄】\n"
     for r in results:
         msg += f"{r[0]} スコア:{r[1]}\n"
 else:
-    msg = "銘柄なし（条件未達）"
+    msg = "ヒットなし"
 
-send_discord(msg)
-
-# 確認用
-send_discord("テスト送信OK")
+send(msg)
+send("テストOK")
