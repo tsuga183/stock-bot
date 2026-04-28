@@ -5,7 +5,7 @@ import os
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 
 def get_all_tickers():
-    # 確実にデータ取れる銘柄だけ
+    # 確実に取得できる銘柄
     return ["7203", "6758", "9984", "8306", "9432"]
 
 TICKERS = get_all_tickers()
@@ -19,7 +19,7 @@ def send_discord(msg):
 def get_score(ticker):
     try:
         df = yf.download(f"{ticker}.T", period="6mo", progress=False)
-        print(f"{ticker} empty={df.empty} len={len(df)}")  # デバッグ
+        print(f"{ticker} empty={df.empty} len={len(df)}")
     except Exception as e:
         print(f"取得失敗: {ticker} {e}")
         return 0
@@ -36,17 +36,17 @@ def get_score(ticker):
 
     score = 0
 
-    # ゆるめ条件
+    # めちゃゆる条件（とりあえず出す用）
     if df["MA25"].iloc[-1] > df["MA75"].iloc[-1]:
         score += 20
 
-    if df["Close"].iloc[-1] >= df["High60"].iloc[-1] * 0.90:
+    if df["Close"].iloc[-1] >= df["High60"].iloc[-1] * 0.85:
         score += 20
 
-    if 1.0 <= df["Vol_ratio"].iloc[-1] <= 3.0:
+    if df["Vol_ratio"].iloc[-1] >= 0.8:
         score += 20
 
-    print(f"{ticker} score={score}")  # デバッグ
+    print(f"{ticker} score={score}")
 
     return score
 
@@ -56,20 +56,20 @@ results = []
 for t in TICKERS:
     try:
         s = get_score(t)
-        if s >= 40:
-            results.append((t, s))
+        results.append((t, s))  # ← 条件なしで全部入れる（重要）
     except Exception as e:
         print(f"スキップ: {t} {e}")
         continue
 
-# 結果送信
-if results:
-    msg = "【銘柄抽出】\n"
-    for r in results:
-        msg += f"{r[0]} スコア:{r[1]}\n"
-    send_discord(msg)
-else:
-    send_discord("銘柄なし（条件未達 or データ取得NG）")
+# スコア順に並び替え
+results = sorted(results, key=lambda x: x[1], reverse=True)
+
+# 上位だけ表示（見やすく）
+msg = "【銘柄スコア一覧】\n"
+for r in results:
+    msg += f"{r[0]} スコア:{r[1]}\n"
+
+send_discord(msg)
 
 # テスト
 send_discord("テスト送信")
