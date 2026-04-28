@@ -5,49 +5,29 @@ import time
 
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 
-TICKERS = [
-    "7203","6758","9984","8306","9432",
-    "7974","6861","6501","6098","4063"
-]
+# 🔥 ここ変更（超重要）
+TICKERS = [str(i) for i in range(1300, 9999)]
 
 def send(msg):
     try:
         requests.post(WEBHOOK_URL, json={"content": msg})
     except:
-        print("Discord送信失敗")
+        print("send error")
 
-
-# 🔥 安定取得（超重要）
-def fetch_data(ticker):
-    for i in range(3):  # 最大3回リトライ
+def fetch(ticker):
+    for _ in range(2):
         try:
-            df = yf.download(
-                f"{ticker}.T",
-                period="6mo",
-                progress=False,
-                threads=False  # ← 安定化ポイント
-            )
-
+            df = yf.download(f"{ticker}.T", period="3mo", progress=False, threads=False)
             if df is not None and not df.empty:
                 return df
-
-        except Exception as e:
-            print(f"{ticker} retry {i+1}")
-
-        time.sleep(2)
-
+        except:
+            pass
+        time.sleep(1)
     return None
 
-
-def get_score(ticker):
-    df = fetch_data(ticker)
-
-    if df is None or len(df) < 50:
-        return None
-
+def get_score(df):
     score = 0
 
-    # 超シンプルロジック（まず動かす）
     if df["Close"].iloc[-1] > df["Close"].iloc[-5]:
         score += 10
 
@@ -61,28 +41,36 @@ def get_score(ticker):
 
 
 results = []
-debug = "【全銘柄】\n"
+count = 0
 
 for t in TICKERS:
-    s = get_score(t)
+    df = fetch(t)
 
-    if s is None:
-        debug += f"{t}: NG\n"
-    else:
-        debug += f"{t}: {s}\n"
-        if s >= 10:
-            results.append((t, s))
+    if df is None or len(df) < 50:
+        continue
 
-send(debug)
+    s = get_score(df)
 
-if results:
-    results.sort(key=lambda x: x[1], reverse=True)
+    if s >= 20:
+        results.append((t, s))
 
-    msg = "【ヒット銘柄】\n"
-    for r in results:
+    count += 1
+
+    # 🔥 API負荷軽減
+    if count % 50 == 0:
+        time.sleep(2)
+
+
+# 上位だけ送る
+results.sort(key=lambda x: x[1], reverse=True)
+top = results[:10]
+
+if top:
+    msg = "【上位銘柄】\n"
+    for r in top:
         msg += f"{r[0]} スコア:{r[1]}\n"
 else:
     msg = "ヒットなし"
 
 send(msg)
-send("テストOK")
+send("スキャン完了")
