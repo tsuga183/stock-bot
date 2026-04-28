@@ -11,31 +11,43 @@ TICKERS = [
 ]
 
 def send(msg):
-    requests.post(WEBHOOK_URL, json={"content": msg})
+    try:
+        requests.post(WEBHOOK_URL, json={"content": msg})
+    except:
+        print("Discord送信失敗")
 
 
-def get_data_with_retry(ticker, retry=3):
-    for i in range(retry):
+# 🔥 安定取得（超重要）
+def fetch_data(ticker):
+    for i in range(3):  # 最大3回リトライ
         try:
-            df = yf.download(f"{ticker}.T", period="6mo", progress=False)
+            df = yf.download(
+                f"{ticker}.T",
+                period="6mo",
+                progress=False,
+                threads=False  # ← 安定化ポイント
+            )
+
             if df is not None and not df.empty:
                 return df
-        except:
-            pass
 
-        time.sleep(2)  # ← 超重要（待つ）
+        except Exception as e:
+            print(f"{ticker} retry {i+1}")
+
+        time.sleep(2)
 
     return None
 
 
 def get_score(ticker):
-    df = get_data_with_retry(ticker)
+    df = fetch_data(ticker)
 
-    if df is None or len(df) < 75:
+    if df is None or len(df) < 50:
         return None
 
     score = 0
 
+    # 超シンプルロジック（まず動かす）
     if df["Close"].iloc[-1] > df["Close"].iloc[-5]:
         score += 10
 
